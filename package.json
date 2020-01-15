@@ -1,0 +1,15 @@
+{
+  "name": "sureflap",
+  "version": "0.0.1",
+  "description": "SureFlap API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "catflap",
+    "iot"
+  ],
+  "author": "Andy Armstrong <andy@hexten.net>",
+  "license": "ISC"
+}
