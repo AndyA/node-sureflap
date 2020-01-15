@@ -13,6 +13,7 @@
   "author": "Andy Armstrong <andy@hexten.net>",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.7.2",
     "cross-fetch": "^3.0.4",
     "lodash": "^4.17.15",
     "moment": "^2.24.0"
