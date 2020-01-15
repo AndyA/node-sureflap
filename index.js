@@ -52,6 +52,8 @@ class SureFlapAPI {
       return msg;
     };
 
+    console.log(`${method} ${this.endpoint(path)}`);
+
     const t1 = await tryCall();
     if (!t1.error) return t1.data;
 
@@ -68,7 +70,7 @@ class SureFlapAPI {
   }
 
   async factory(clazz, path, payload) {
-    const msg = await this.call("GET", path, payload);
+    const msg = await this.call("GET", clazz._addWith(path), payload);
     if (_.isArray(msg)) return msg.map(obj => new clazz(this, obj));
     return new clazz(this, msg);
   }
@@ -103,6 +105,19 @@ class SureFlap {
     this.data = data;
   }
 
+  static get _with() {
+    return [];
+  }
+
+  static _addWith(path) {
+    const w = this._with;
+    if (w.length === 0) return path;
+    return [
+      path.replace(/\?.*/, ""),
+      w.map(opt => `with[]=${opt}`).join("&")
+    ].join("?");
+  }
+
   get id() {
     return this.data && this.data.id;
   }
@@ -132,7 +147,10 @@ class SureFlap {
   }
 
   async pet(id) {
-    return this.api.factory(SureFlapPet, `/api/pet/${id}?with[]=position`);
+    return this.api.factory(
+      SureFlapPet,
+      `/api/pet/${id}?with[]=position&with[]=status&with[]=photo&with[]=tag`
+    );
   }
 
   async pets() {
@@ -141,6 +159,10 @@ class SureFlap {
 }
 
 class SureFlapDevice extends SureFlap {
+  static get _with() {
+    return ["children", "status", "curfew", "control"];
+  }
+
   get productName() {
     return PRODUCT_NAME[this.data.product_id] || "Unknown";
   }
@@ -155,6 +177,10 @@ class SureFlapDevice extends SureFlap {
 }
 
 class SureFlapPet extends SureFlap {
+  static get _with() {
+    return ["photo", "breed", "conditions", "tag", "food_type", "species"];
+  }
+
   async position() {
     return this.api.call("GET", `/api/pet/${this.id}/position`);
   }
