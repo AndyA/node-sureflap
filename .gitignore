@@ -3,3 +3,5 @@
 
 .*.sw?
 /Session.vim
+
+/node_modules/

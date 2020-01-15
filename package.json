@@ -11,5 +11,10 @@
     "iot"
   ],
   "author": "Andy Armstrong <andy@hexten.net>",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cross-fetch": "^3.0.4",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0"
+  }
 }
