@@ -36,13 +36,13 @@ class SureFlapAPI {
   }
 
   async call(method, path, payload) {
-    const tryCall = async x => {
+    const tryCall = async () => {
       const login = await this.login();
       const opt = {
         method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${login.token + (x || "")}`
+          Authorization: `Bearer ${login.token}`
         }
       };
       if (payload) opt.body = JSON.stringify(payload);
@@ -52,10 +52,10 @@ class SureFlapAPI {
       return msg;
     };
 
-    console.log(`${method} ${this.endpoint(path)}`);
+    //    console.log(`${method} ${this.endpoint(path)}`);
 
     const t1 = await tryCall();
-    if (!t1.error) return t1.data;
+    if (!t1.error) return t1;
 
     if (!/not be verified/.test(t1.error.message || ""))
       throw new Error(`Failed ${path}: ${JSON.stringify(t1.error)}`);
@@ -66,11 +66,16 @@ class SureFlapAPI {
     if (t2.error)
       throw new Error(`Failed ${path}: ${JSON.stringify(t2.error)}`);
 
-    return t2.data;
+    return t2;
+  }
+
+  async callData(method, path, payload) {
+    const msg = await this.call(method, path, payload);
+    return msg.data;
   }
 
   async factory(clazz, path, payload) {
-    const msg = await this.call("GET", clazz._addWith(path), payload);
+    const msg = await this.callData("GET", clazz._addWith(path), payload);
     if (_.isArray(msg)) return msg.map(obj => new clazz(this, obj));
     return new clazz(this, msg);
   }
@@ -94,7 +99,7 @@ class SureFlapAPI {
   async logout() {
     if (!this._data) return;
 
-    await this.call("POST", "/api/auth/logout");
+    await this.callData("POST", "/api/auth/logout");
     delete this._data;
   }
 }
@@ -111,11 +116,8 @@ class SureFlap {
 
   static _addWith(path) {
     const w = this._with;
-    if (w.length === 0) return path;
-    return [
-      path.replace(/\?.*/, ""),
-      w.map(opt => `with[]=${opt}`).join("&")
-    ].join("?");
+    if (w.length) return path + "?" + w.map(opt => `with[]=${opt}`).join("&");
+    return path;
   }
 
   get id() {
@@ -155,9 +157,35 @@ class SureFlap {
   }
 }
 
+class SureFlapHousehold extends SureFlap {
+  static get _with() {
+    return [
+      "invites",
+      "invites.creating",
+      "invites.creating.profilePhoto",
+      "invites.accepting",
+      "invites.accepting.profilePhoto",
+      "pets",
+      "users",
+      "users.user",
+      "users.user.profilePhoto",
+      "users.households",
+      "timezone"
+    ];
+  }
+
+  async devices() {
+    return this.api.factory(SureFlapDevice, `/api/household/${this.id}/device`);
+  }
+
+  async pets() {
+    return this.api.factory(SureFlapPet, `/api/household/${this.id}/pet`);
+  }
+}
+
 class SureFlapDevice extends SureFlap {
   static get _with() {
-    return ["children", "status", "curfew", "control"];
+    return ["children", "status", "tags", "control"];
   }
 
   get productName() {
@@ -165,48 +193,38 @@ class SureFlapDevice extends SureFlap {
   }
 
   async control() {
-    return this.api.call("GET", `/api/device/${this.id}/control`);
+    return this.api.callData("GET", `/api/device/${this.id}/control`);
   }
 
   async setControl(opt) {
-    return this.api.call("PUT", `/api/device/${this.id}/control`, opt);
+    return this.api.callData("PUT", `/api/device/${this.id}/control`, opt);
   }
 }
 
 class SureFlapPet extends SureFlap {
   static get _with() {
     return [
-      "photo",
       "breed",
       "conditions",
-      "tag",
       "food_type",
+      "photo",
+      "position",
       "species",
       "status",
-      "position"
+      "tag"
     ];
   }
 
   async position() {
-    return this.api.call("GET", `/api/pet/${this.id}/position`);
+    return this.api.callData("GET", `/api/pet/${this.id}/position`);
   }
 
   async setPosition(where, since) {
     const m = since ? moment(since) : moment();
-    return this.api.call("POST", `/api/pet/${this.id}/position`, {
+    return this.api.callData("POST", `/api/pet/${this.id}/position`, {
       where,
       since: m.toISOString()
     });
-  }
-}
-
-class SureFlapHousehold extends SureFlap {
-  async devices() {
-    return this.api.factory(SureFlapDevice, `/api/household/${this.id}/device`);
-  }
-
-  async pets() {
-    return this.api.factory(SureFlapPet, `/api/household/${this.id}/pet`);
   }
 }
 
