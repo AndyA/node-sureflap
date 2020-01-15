@@ -139,22 +139,19 @@ class SureFlap {
   }
 
   async device(id) {
-    return this.api.factory(SureFlapDevice, `/api/device/${id}?with[]=control`);
+    return this.api.factory(SureFlapDevice, `/api/device/${id}`);
   }
 
   async devices() {
-    return this.api.factory(SureFlapDevice, `/api/device?with[]=control`);
+    return this.api.factory(SureFlapDevice, `/api/device`);
   }
 
   async pet(id) {
-    return this.api.factory(
-      SureFlapPet,
-      `/api/pet/${id}?with[]=position&with[]=status&with[]=photo&with[]=tag`
-    );
+    return this.api.factory(SureFlapPet, `/api/pet/${id}`);
   }
 
   async pets() {
-    return this.api.factory(SureFlapPet, "/api/pet?with[]=position");
+    return this.api.factory(SureFlapPet, "/api/pet");
   }
 }
 
@@ -178,7 +175,16 @@ class SureFlapDevice extends SureFlap {
 
 class SureFlapPet extends SureFlap {
   static get _with() {
-    return ["photo", "breed", "conditions", "tag", "food_type", "species"];
+    return [
+      "photo",
+      "breed",
+      "conditions",
+      "tag",
+      "food_type",
+      "species",
+      "status",
+      "position"
+    ];
   }
 
   async position() {
@@ -196,17 +202,11 @@ class SureFlapPet extends SureFlap {
 
 class SureFlapHousehold extends SureFlap {
   async devices() {
-    return this.api.factory(
-      SureFlapDevice,
-      `/api/household/${this.id}/device?with[]=control`
-    );
+    return this.api.factory(SureFlapDevice, `/api/household/${this.id}/device`);
   }
 
   async pets() {
-    return this.api.factory(
-      SureFlapPet,
-      `/api/household/${this.id}/pet?with[]=position`
-    );
+    return this.api.factory(SureFlapPet, `/api/household/${this.id}/pet`);
   }
 }
 
